@@ -78,6 +78,9 @@ class windowFrame(QtWidgets.QGraphicsView):
             item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable)
             self.scene().addItem(item)
             self.writeText("Refresh", circX, circY, w, h)
+            
+            sslider = pathSlider(minimum=0, maximum=100)
+            self.scene().addWidget(sslider)
         
         except ZeroDivisionError:
             sys.exit("Unable to connect to the server")
