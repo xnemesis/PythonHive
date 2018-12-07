@@ -1,0 +1,35 @@
+Version History
+
+0.0.1a - First version
+0.1.0a - Switched to OOP
+0.1.1a - Implemented Error tracking
+0.1.2a - Added buttons
+0.2.0a - Added support for groups
+0.3.0a - Added support for brightness and warmth
+0.3.1a - Added features to control brightness on GUI
+0.3.2a - Optimised some slow code
+0.3.3a - Renaming functions to follow standardised naming e.g. getX, setX, isX, _funcX
+0.3.4a - Split source files and tried to standardise classes
+0.3.5a - Began documenting functions and classes
+0.4.0a - Added Custom Groups
+0.4.1a - Added Refresh button to GUI
+0.4.2a - Added refresh to Groups
+0.4.3a - Added further error checking and a hiveError class
+0.4.4a - Optimised code further
+0.4.5a - Reduced device arrays to one - merged all types of devices in to one list
+
+Todo:
+Fix layout - maybe more rings of circles around central button
+Update text of central button - Turn all on/Turn all off
+Can most of json be removed i.e. schedule?
+Implement properties for lights in json - hide device (e.g. if part of group)
+Implement sensors
+Implement change colour for lights
+Make buttons not moveable
+Set widget size and make it non-resizable
+Perhaps implement holding down button e.g. holding down brightness increases it by more
+    - Time taken on mousedown and compared to time on mouseup to determine this?
+?? Further error checking
+Move brightness buttons to right place
+Consider weakref/weakmethod for Hive instances. Can we reduce the use of memory as its
+    back up to 70ish MB

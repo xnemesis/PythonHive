@@ -1,0 +1,558 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>hive_class &#8212; Python Hive 0.0.2a documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for hive_class</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">time</span><span class="o">,</span> <span class="nn">datetime</span><span class="o">,</span> <span class="nn">pytz</span><span class="o">,</span> <span class="nn">requests</span><span class="o">,</span> <span class="nn">json</span><span class="o">,</span> <span class="nn">time</span><span class="o">,</span> <span class="nn">simplejson</span>
+
+<span class="kn">from</span> <span class="nn">astral</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="k">import</span> <span class="n">pprint</span>
+
+<span class="kn">from</span> <span class="nn">error</span> <span class="k">import</span> <span class="o">*</span>
+
+<span class="c1"># Payload constants</span>
+<span class="n">ON_PAYLOAD</span> <span class="o">=</span> \
+    <span class="s1">&#39;{&quot;nodes&quot;:[{&quot;attributes&quot;:{&quot;state&quot;:{&quot;targetValue&quot;:&quot;ON&quot;}}}]}&#39;</span>
+<span class="n">OFF_PAYLOAD</span> <span class="o">=</span> \
+    <span class="s1">&#39;{&quot;nodes&quot;:[{&quot;attributes&quot;:{&quot;state&quot;:{&quot;targetValue&quot;:&quot;OFF&quot;}}}]}&#39;</span>
+
+<span class="c1"># Escaped so value can be formatted</span>
+<span class="n">BRIGHTNESS_PAYLOAD</span> <span class="o">=</span> \
+    <span class="s1">&#39;{{&quot;nodes&quot;:[{{&quot;attributes&quot;:{{&quot;brightness&quot;:{{&quot;targetValue&quot;:&quot;</span><span class="si">{}</span><span class="s1">&quot;}}}}}}]}}&#39;</span>
+<span class="n">TEMPERATURE_PAYLOAD</span> <span class="o">=</span> \
+    <span class="s1">&#39;{{&quot;nodes&quot;:[{{&quot;attributes&quot;:{{&quot;colourTemperature&quot;:{{&quot;targetValue&quot;:&quot;</span><span class="si">{}</span><span class="s1">&quot;}}}}}}]}}&#39;</span>
+
+<div class="viewcode-block" id="hive"><a class="viewcode-back" href="../hive_class.html#hive_class.hive">[docs]</a><span class="k">class</span> <span class="nc">hive</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Hive device control class\</span>
+<span class="sd">    \</span>
+<span class="sd">    This class controls hive devices. Currently, this only supports lights and groups of\</span>
+<span class="sd">    lights.\</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initiliase hive class</span>
+<span class="sd">    </span>
+<span class="sd">        Initialises the hive class, sets variables and initialises the devices</span>
+
+<span class="sd">        :param self: Instance of hive class</span>
+<span class="sd">        :raises ValueError: Nothing yet</span>
+<span class="sd">        :return: None:</span>
+<span class="sd">        :rtype: None:\</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1">#global vars</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">apikey</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">DEBUG</span> <span class="o">=</span><span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">l</span> <span class="o">=</span> <span class="n">Location</span><span class="p">(</span><span class="n">info</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;London&quot;</span><span class="p">,</span><span class="s2">&quot;UK&quot;</span><span class="p">,</span><span class="mf">51.5074</span><span class="p">,</span> <span class="mf">0.1278</span><span class="p">,</span> <span class="s2">&quot;Europe/London&quot;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">now</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">deviceType</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1">#self.arrLights = list( {} for i in xrange(12) )</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">arrLights</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">arrGroups</span> <span class="o">=</span> <span class="p">{}</span>
+                
+        <span class="c1">#Initialise data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hive_main</span><span class="p">()</span>
+        
+        <span class="c1">#Initialise list of lights</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_getDevices</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1">#sends the username/password combo to get an apikey</span>
+<div class="viewcode-block" id="hive.getApiKey"><a class="viewcode-back" href="../hive_class.html#hive_class.hive.getApiKey">[docs]</a>    <span class="k">def</span> <span class="nf">getApiKey</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Obtains the Api key</span>
+<span class="sd">        </span>
+<span class="sd">        Sends the username and password from the configuration file to obtain the api key.</span>
+<span class="sd">        </span>
+<span class="sd">        :param self: Instance of hive class</span>
+<span class="sd">        :raises ValueError: Nothing yet</span>
+<span class="sd">        :return: Api Key</span>
+<span class="sd">        :rtype: str\</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">apikey</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1">#gets a new apikey</span>
+            <span class="n">keys</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;username&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">username</span><span class="p">,</span><span class="s1">&#39;password&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="p">,</span><span class="s1">&#39;caller&#39;</span><span class="p">:</span><span class="s1">&#39;web&#39;</span><span class="p">}</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;https://api-prod.bgchprod.info:8443/api/login&quot;</span><span class="p">,</span><span class="n">params</span><span class="o">=</span><span class="n">keys</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">apikey</span><span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;ApiSession&#39;</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apikey</span></div>
+
+<div class="viewcode-block" id="hive.getLights"><a class="viewcode-back" href="../hive_class.html#hive_class.hive.getLights">[docs]</a>    <span class="k">def</span> <span class="nf">getLights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets a list of the lights</span>
+<span class="sd">        </span>
+<span class="sd">        Gets a list of Hive light devices.</span>
+<span class="sd">        </span>
+<span class="sd">        :param self: Instance of hive class</span>
+<span class="sd">        :param force: Boolean that forces a refresh of devices with the server</span>
+<span class="sd">        :raises ValueError: Nothing yet</span>
+<span class="sd">        :return: List of lights</span>
+<span class="sd">        :rtype: dictionary\</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_getDevices</span><span class="p">(</span><span class="n">force</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">arrLights</span></div>
+        
+<div class="viewcode-block" id="hive.getGroups"><a class="viewcode-back" href="../hive_class.html#hive_class.hive.getGroups">[docs]</a>    <span class="k">def</span> <span class="nf">getGroups</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets a list of the groups</span>
+<span class="sd">        </span>
+<span class="sd">        Gets a list of Hive group devices.</span>
+<span class="sd">        </span>
+<span class="sd">        :param self: Instance of hive class</span>
+<span class="sd">        :param force: Boolean that forces a refresh of devices with the server</span>
+<span class="sd">        :raises ValueError: Nothing yet</span>
+<span class="sd">        :return: List of groups</span>
+<span class="sd">        :rtype: dictionary\</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_getDevices</span><span class="p">(</span><span class="n">force</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">arrGroups</span></div>
+
+<div class="viewcode-block" id="hive._getDevices"><a class="viewcode-back" href="../hive_class.html#hive_class.hive._getDevices">[docs]</a>    <span class="k">def</span> <span class="nf">_getDevices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets a list of the devices</span>
+<span class="sd">        </span>
+<span class="sd">        Gets a list of Hive devices. Currently, this only supports groups and lights.</span>
+<span class="sd">        This should not be called directly from outside the class.</span>
+<span class="sd">        </span>
+<span class="sd">        :param self: Instance of hive class</span>
+<span class="sd">        :param force: Boolean that forces a refresh of devices with the server</span>
+<span class="sd">        :raises ValueError: Nothing yet</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        :rtype: None</span>
+<span class="sd">        </span>
+<span class="sd">        .. seealso:: modules :py:func:`getLights`, :py:func:`getGroups`\</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arrLights</span><span class="p">))</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">force</span> <span class="o">==</span> <span class="kc">True</span><span class="p">):</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="c1">#sends the request to get the list of devices</span>
+            <span class="n">headers</span><span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;X-Omnia-Access-Token&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">getApiKey</span><span class="p">(),</span>
+                <span class="s1">&#39;X-AlertMe-Client&#39;</span><span class="p">:</span><span class="s1">&#39;Web&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Accept&#39;</span><span class="p">:</span><span class="s1">&#39;application/vnd.alertme.zoo-6.4+json&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Content-Type&#39;</span><span class="p">:</span><span class="s1">&#39;application/json&#39;</span>
+            <span class="p">}</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;https://api-prod.bgchprod.info/omnia/nodes/&quot;</span><span class="p">,</span><span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+            <span class="n">temp</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;nodes&#39;</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">rt</span> <span class="ow">in</span> <span class="n">temp</span><span class="p">:</span>
+                <span class="c1"># We only want lights here</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">rt</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">][</span><span class="s1">&#39;nodeType&#39;</span><span class="p">][</span><span class="s1">&#39;reportedValue&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;class.light&quot;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+                      <span class="ow">or</span> <span class="n">rt</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">][</span><span class="s1">&#39;nodeType&#39;</span><span class="p">][</span><span class="s1">&#39;reportedValue&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;class.tunable.light&quot;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">arrLights</span><span class="p">[</span><span class="n">rt</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">arrLights</span><span class="p">[</span><span class="n">rt</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rt</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">arrLights</span><span class="p">[</span><span class="n">rt</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rt</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">arrLights</span><span class="p">[</span><span class="n">rt</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]][</span><span class="s1">&#39;brightness&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rt</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">][</span><span class="s1">&#39;brightness&#39;</span><span class="p">][</span><span class="s1">&#39;reportedValue&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">rt</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">][</span><span class="s1">&#39;state&#39;</span><span class="p">][</span><span class="s1">&#39;reportedValue&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;OFF&#39;</span><span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">arrLights</span><span class="p">[</span><span class="n">rt</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]][</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">arrLights</span><span class="p">[</span><span class="n">rt</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]][</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="c1"># Store device type for quicker checking later</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">deviceType</span><span class="p">[</span><span class="n">rt</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="s1">&#39;light&#39;</span>
+                    <span class="n">i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="k">elif</span> <span class="p">(</span><span class="n">rt</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">][</span><span class="s1">&#39;nodeType&#39;</span><span class="p">][</span><span class="s1">&#39;reportedValue&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;class.synthetic.group&quot;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">arrGroups</span><span class="p">[</span><span class="n">rt</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="c1">#This makes it easier when calling from outside the class for generic devices</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">arrGroups</span><span class="p">[</span><span class="n">rt</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rt</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">arrGroups</span><span class="p">[</span><span class="n">rt</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rt</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">arrGroups</span><span class="p">[</span><span class="n">rt</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]][</span><span class="s1">&#39;lights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">arrGroups</span><span class="p">[</span><span class="n">rt</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]][</span><span class="s1">&#39;lights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getGroupLights</span><span class="p">(</span><span class="n">rt</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+                    <span class="c1"># Store device type for quicker checking later</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">deviceType</span><span class="p">[</span><span class="n">rt</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="s1">&#39;group&#39;</span></div>
+    
+<div class="viewcode-block" id="hive.getGroupLights"><a class="viewcode-back" href="../hive_class.html#hive_class.hive.getGroupLights">[docs]</a>    <span class="k">def</span> <span class="nf">getGroupLights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets a list of the lights associated with a group</span>
+<span class="sd">        </span>
+<span class="sd">        Gets a list of Hive light devices associated with a group.</span>
+<span class="sd">        </span>
+<span class="sd">        :param self: Instance of hive class</span>
+<span class="sd">        :param group_id: String representing ID of the group</span>
+<span class="sd">        :raises ValueError: Nothing yet</span>
+<span class="sd">        :return: List of groups</span>
+<span class="sd">        :rtype: dictionary\</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">arrGroupLights</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">headers</span><span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;X-Omnia-Access-Token&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">getApiKey</span><span class="p">(),</span>
+            <span class="s1">&#39;X-AlertMe-Client&#39;</span><span class="p">:</span><span class="s1">&#39;Web&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;Accept&#39;</span><span class="p">:</span><span class="s1">&#39;application/vnd.alertme.zoo-6.4+json&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;Content-Type&#39;</span><span class="p">:</span><span class="s1">&#39;application/json&#39;</span>
+        <span class="p">}</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;https://api.prod.bgchprod.info/omnia/bindings?syntheticNodeId=&quot;</span> <span class="o">+</span> <span class="n">group_id</span><span class="p">,</span><span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;bindings&#39;</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">rt</span> <span class="ow">in</span> <span class="n">temp</span><span class="p">:</span>
+            <span class="n">arrGroupLights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">rt</span><span class="p">[</span><span class="s1">&#39;boundNodeId&#39;</span><span class="p">]</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+                
+        <span class="k">return</span> <span class="n">arrGroupLights</span></div>
+
+    <span class="c1">#queries the hive api to get whether the specifed light is on or not</span>
+<div class="viewcode-block" id="hive.isLightOn"><a class="viewcode-back" href="../hive_class.html#hive_class.hive.isLightOn">[docs]</a>    <span class="k">def</span> <span class="nf">isLightOn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">light_id</span><span class="p">,</span> <span class="n">force</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">force</span><span class="p">):</span>
+            <span class="c1">#sends the request to get the light&#39;s status</span>
+            <span class="n">headers</span><span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;X-Omnia-Access-Token&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">getApiKey</span><span class="p">(),</span>
+                <span class="s1">&#39;X-AlertMe-Client&#39;</span><span class="p">:</span><span class="s1">&#39;Web&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Accept&#39;</span><span class="p">:</span><span class="s1">&#39;application/vnd.alertme.zoo-6.4+json&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Content-Type&#39;</span><span class="p">:</span><span class="s1">&#39;application/json&#39;</span>
+            <span class="p">}</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;https://api-prod.bgchprod.info/omnia/nodes/&quot;</span><span class="o">+</span><span class="n">light_id</span><span class="p">,</span><span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+
+            <span class="c1">#presumes light is on</span>
+            <span class="n">lightOn</span><span class="o">=</span> <span class="kc">True</span>
+
+            <span class="c1">#gets the light&#39;s status from the returned JSON and tests if it is off or not.</span>
+            <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;nodes&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;attributes&#39;</span><span class="p">][</span><span class="s1">&#39;state&#39;</span><span class="p">][</span><span class="s1">&#39;reportedValue&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="s1">&#39;OFF&#39;</span><span class="p">:</span>
+                <span class="n">lightOn</span><span class="o">=</span> <span class="kc">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">lightOn</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">updateLightValue</span><span class="p">(</span><span class="n">light_id</span><span class="p">,</span> <span class="s2">&quot;state&quot;</span><span class="p">,</span> <span class="n">lightOn</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">lightOn</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">light_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">arrLights</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">arrLights</span><span class="p">[</span><span class="n">light_id</span><span class="p">][</span><span class="s1">&#39;status&#39;</span><span class="p">]</span>
+            <span class="k">return</span> <span class="o">-</span><span class="mi">1</span></div>
+        
+<div class="viewcode-block" id="hive.updateLightValue"><a class="viewcode-back" href="../hive_class.html#hive_class.hive.updateLightValue">[docs]</a>    <span class="k">def</span> <span class="nf">updateLightValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">light_id</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">light_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">arrLights</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">arrLights</span><span class="p">[</span><span class="n">light_id</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">elif</span> <span class="n">light_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">arrGroups</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">arrGroups</span><span class="p">[</span><span class="n">light_id</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span></div>
+
+    <span class="c1">#work out whether the current time is after sunrise but before sunset</span>
+<div class="viewcode-block" id="hive.isDayTime"><a class="viewcode-back" href="../hive_class.html#hive_class.hive.isDayTime">[docs]</a>    <span class="k">def</span> <span class="nf">isDayTime</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1">#now = now.replace(hour=23, minute=10)</span>
+        <span class="n">daytime</span><span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1">#extract the sunrise/sunset times adds/substracts 30 minutes from these times to account for dawn/dusk</span>
+        <span class="n">sunrise</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getSunrise</span><span class="p">()</span>
+        <span class="n">sunset</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getSunset</span><span class="p">()</span>
+
+        <span class="c1">#if the current time is between sunrise and sunset then its daytime</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">now</span> <span class="o">&gt;=</span> <span class="n">sunrise</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">now</span> <span class="o">&lt;=</span> <span class="n">sunset</span><span class="p">:</span>
+            <span class="n">daytime</span><span class="o">=</span><span class="kc">True</span>
+
+        <span class="k">return</span> <span class="n">daytime</span></div>
+
+    <span class="c1">#calculates the sunrise time and adds 30 minutes to account for it still being dark</span>
+<div class="viewcode-block" id="hive.getSunrise"><a class="viewcode-back" href="../hive_class.html#hive_class.hive.getSunrise">[docs]</a>    <span class="k">def</span> <span class="nf">getSunrise</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">l</span><span class="o">.</span><span class="n">sunrise</span><span class="p">()</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span></div>
+
+    <span class="c1">#calculates the sunset time and substracts 30 minutes to account for it getting dark</span>
+<div class="viewcode-block" id="hive.getSunset"><a class="viewcode-back" href="../hive_class.html#hive_class.hive.getSunset">[docs]</a>    <span class="k">def</span> <span class="nf">getSunset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">l</span><span class="o">.</span><span class="n">sunset</span><span class="p">()</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span></div>
+
+    <span class="c1">#gets the time the device was last modified from the server</span>
+<div class="viewcode-block" id="hive.getRemoteModifiedTime"><a class="viewcode-back" href="../hive_class.html#hive_class.hive.getRemoteModifiedTime">[docs]</a>    <span class="k">def</span> <span class="nf">getRemoteModifiedTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">light_id</span><span class="p">):</span>
+        <span class="c1">#sends the request to get the light&#39;s status</span>
+        <span class="n">headers</span><span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;X-Omnia-Access-Token&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">getApiKey</span><span class="p">(),</span>
+            <span class="s1">&#39;X-AlertMe-Client&#39;</span><span class="p">:</span><span class="s1">&#39;Web&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;Accept&#39;</span><span class="p">:</span><span class="s1">&#39;application/vnd.alertme.zoo-6.4+json&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;Content-Type&#39;</span><span class="p">:</span><span class="s1">&#39;application/json&#39;</span>
+        <span class="p">}</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;https://api-prod.bgchprod.info/omnia/nodes/&quot;</span><span class="o">+</span><span class="n">light_id</span><span class="p">,</span><span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+
+        <span class="c1">#presumes light is on</span>
+        <span class="k">return</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;nodes&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;attributes&#39;</span><span class="p">][</span><span class="s1">&#39;state&#39;</span><span class="p">][</span><span class="s1">&#39;reportReceivedTime&#39;</span><span class="p">]</span></div>
+
+    <span class="c1">#saves the reported time from the server locally</span>
+<div class="viewcode-block" id="hive.saveModifiedTime"><a class="viewcode-back" href="../hive_class.html#hive_class.hive.saveModifiedTime">[docs]</a>    <span class="k">def</span> <span class="nf">saveModifiedTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">light_id</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">lightOn</span><span class="p">):</span>
+        <span class="c1"># now write output to a file</span>
+        <span class="n">lightFile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">light_id</span><span class="o">+</span><span class="s2">&quot;.json&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+        <span class="c1"># magic happens here to make it pretty-printed</span>
+        <span class="n">output</span><span class="o">=</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span><span class="n">light_id</span><span class="p">,</span><span class="s1">&#39;modified&#39;</span><span class="p">:</span><span class="n">timestamp</span><span class="p">,</span> <span class="s1">&#39;lightOn&#39;</span><span class="p">:</span><span class="n">lightOn</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+        <span class="n">lightFile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">simplejson</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">simplejson</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+        <span class="n">lightFile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+    <span class="c1">#reads the time the script last modified the device</span>
+<div class="viewcode-block" id="hive.getLocalModifiedTime"><a class="viewcode-back" href="../hive_class.html#hive_class.hive.getLocalModifiedTime">[docs]</a>    <span class="k">def</span> <span class="nf">getLocalModifiedTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">light_id</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">light_id</span><span class="o">+</span><span class="s1">&#39;.json&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">json_data</span><span class="p">:</span>
+                <span class="n">d</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">json_data</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;modified&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getRemoteModifiedTime</span><span class="p">(</span><span class="n">light_id</span><span class="p">)</span></div>
+
+    <span class="c1">#returns true if the device was modified outside of this script and someone has turned the light on/off with via the app or dashboard</span>
+<div class="viewcode-block" id="hive.isOverridden"><a class="viewcode-back" href="../hive_class.html#hive_class.hive.isOverridden">[docs]</a>    <span class="k">def</span> <span class="nf">isOverridden</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">light_id</span><span class="p">):</span>
+        <span class="c1">#gets the time the device was last modified by the script</span>
+        <span class="n">local_update</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getLocalModifiedTime</span><span class="p">(</span><span class="n">light_id</span><span class="p">)</span><span class="o">/</span><span class="mf">1000.0</span><span class="p">)</span>
+
+        <span class="c1">#gets the time the device was last modified by anything</span>
+        <span class="n">remote_update</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getRemoteModifiedTime</span><span class="p">(</span><span class="n">light_id</span><span class="p">)</span><span class="o">/</span><span class="mf">1000.0</span><span class="p">)</span>
+
+        <span class="c1">#if device has been modified since this script last modified it</span>
+        <span class="k">if</span> <span class="n">remote_update</span> <span class="o">&gt;</span> <span class="n">local_update</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;isOverridden&quot;</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+    <span class="c1">#sends the request to turn the specified light on or off (contained within the payload provided)</span>
+<div class="viewcode-block" id="hive._sendDeviceValue"><a class="viewcode-back" href="../hive_class.html#hive_class.hive._sendDeviceValue">[docs]</a>    <span class="k">def</span> <span class="nf">_sendDeviceValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">light_id</span><span class="p">,</span> <span class="n">payload</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">headers</span><span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;X-Omnia-Access-Token&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">getApiKey</span><span class="p">(),</span>
+                <span class="s1">&#39;X-AlertMe-Client&#39;</span><span class="p">:</span><span class="s1">&#39;Web&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Accept&#39;</span><span class="p">:</span><span class="s1">&#39;application/vnd.alertme.zoo-6.4+json&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Content-Type&#39;</span><span class="p">:</span><span class="s1">&#39;application/json&#39;</span>
+            <span class="p">}</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;https://api-prod.bgchprod.info/omnia/nodes/&quot;</span>
+                             <span class="o">+</span><span class="n">light_id</span><span class="p">,</span><span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span><span class="n">data</span><span class="o">=</span><span class="n">payload</span><span class="p">)</span>
+            <span class="n">modifiedTime</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getLocalModifiedTime</span><span class="p">(</span><span class="n">light_id</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">saveModifiedTime</span><span class="p">(</span><span class="n">light_id</span><span class="p">,</span><span class="n">modifiedTime</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">&lt;&gt;</span> <span class="mi">200</span><span class="p">):</span>
+                <span class="n">pprint</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">hiveError</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">hiveError</span><span class="p">(</span><span class="s2">&quot;One or more parameters invalid&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">401</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">hiveError</span><span class="p">(</span><span class="s2">&quot;User is not authorized&quot;</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="n">hiveError</span> <span class="k">as</span> <span class="n">hE</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;An exception occured: &quot;</span><span class="p">,</span> <span class="n">hE</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;Unexpected exception: &quot;</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">pprint</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span></div>
+    
+    <span class="c1"># Toggles light between on and off</span>
+<div class="viewcode-block" id="hive.toggleDevice"><a class="viewcode-back" href="../hive_class.html#hive_class.hive.toggleDevice">[docs]</a>    <span class="k">def</span> <span class="nf">toggleDevice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Toggles a device</span>
+<span class="sd">        </span>
+<span class="sd">        Toggles that status of a device to either off if currently on, or on if</span>
+<span class="sd">        currently off</span>
+<span class="sd">        </span>
+<span class="sd">        This works with individual lights and groups.</span>
+<span class="sd">        </span>
+<span class="sd">        :param self: Instance of hive class</span>
+<span class="sd">        :param device_id: String representing ID of the device</span>
+<span class="sd">        :raises hiveError: See hiveError for more info</span>
+<span class="sd">        :return: True if device has been turned on, False if device has been turned off.</span>
+<span class="sd">                 Returns None if neither of these actions has happened.</span>
+<span class="sd">        :rtype: Boolean or None\</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">device_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">deviceType</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">hiveError</span><span class="p">(</span><span class="mi">001</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deviceType</span><span class="p">[</span><span class="n">device_id</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;light&#39;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">isLightOn</span><span class="p">(</span><span class="n">device_id</span><span class="p">)):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_sendDeviceValue</span><span class="p">(</span><span class="n">device_id</span><span class="p">,</span> <span class="n">OFF_PAYLOAD</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">updateLightValue</span><span class="p">(</span><span class="n">device_id</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_sendDeviceValue</span><span class="p">(</span><span class="n">device_id</span><span class="p">,</span> <span class="n">ON_PAYLOAD</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">updateLightValue</span><span class="p">(</span><span class="n">device_id</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deviceType</span><span class="p">[</span><span class="n">device_id</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;group&#39;</span><span class="p">):</span>
+                <span class="n">status</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">arrGroups</span><span class="p">[</span><span class="n">device_id</span><span class="p">][</span><span class="s1">&#39;lights&#39;</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="s2">&quot;status&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">arrGroups</span><span class="p">[</span><span class="n">device_id</span><span class="p">]):</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arrGroups</span><span class="p">[</span><span class="n">device_id</span><span class="p">][</span><span class="s1">&#39;status&#39;</span><span class="p">]):</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_sendDeviceValue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arrGroups</span><span class="p">[</span><span class="n">device_id</span><span class="p">][</span><span class="s1">&#39;lights&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="n">OFF_PAYLOAD</span><span class="p">)</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">updateLightValue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arrGroups</span><span class="p">[</span><span class="n">device_id</span><span class="p">][</span><span class="s1">&#39;lights&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+                            <span class="n">status</span> <span class="o">=</span> <span class="kc">False</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_sendDeviceValue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arrGroups</span><span class="p">[</span><span class="n">device_id</span><span class="p">][</span><span class="s1">&#39;lights&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="n">ON_PAYLOAD</span><span class="p">)</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">updateLightValue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arrGroups</span><span class="p">[</span><span class="n">device_id</span><span class="p">][</span><span class="s1">&#39;lights&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+                            <span class="n">status</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_sendDeviceValue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arrGroups</span><span class="p">[</span><span class="n">device_id</span><span class="p">][</span><span class="s1">&#39;lights&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="n">ON_PAYLOAD</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">updateLightValue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arrGroups</span><span class="p">[</span><span class="n">device_id</span><span class="p">][</span><span class="s1">&#39;lights&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+                        <span class="n">status</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">updateLightValue</span><span class="p">(</span><span class="n">device_id</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="n">status</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">status</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span>
+        <span class="k">except</span> <span class="n">hiveError</span> <span class="k">as</span> <span class="n">hE</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;An exception occured: &quot;</span><span class="p">,</span> <span class="n">hE</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;Unexpected exception: &quot;</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span></div>
+    
+    <span class="c1"># Toggles all lights, 0 = off, 1 = on, 2 = toggle all to reverse state</span>
+<div class="viewcode-block" id="hive.toggleAllLights"><a class="viewcode-back" href="../hive_class.html#hive_class.hive.toggleAllLights">[docs]</a>    <span class="k">def</span> <span class="nf">toggleAllLights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">status</span> <span class="o">=</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Toggles all light devices</span>
+<span class="sd">        </span>
+<span class="sd">        Toggles that status of all lights to either on, off, or the reverse of their</span>
+<span class="sd">        current state.</span>
+<span class="sd">        </span>
+<span class="sd">        :param self: Instance of hive class</span>
+<span class="sd">        :param status: Integer representing the state to set devices to</span>
+<span class="sd">                       0 is off, 1 is on, 2 is the reverse of current state</span>
+<span class="sd">        :raises ValueError: Nothing yet</span>
+<span class="sd">        :return: Nothing yet</span>
+<span class="sd">        :rtype: None\</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="nb">id</span><span class="p">,</span> <span class="n">light</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">arrLights</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">status</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">light</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_sendDeviceValue</span><span class="p">(</span><span class="n">light</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">],</span> <span class="n">OFF_PAYLOAD</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">updateLightValue</span><span class="p">(</span><span class="n">light_id</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="p">(</span><span class="n">status</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">light</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">False</span><span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_sendDeviceValue</span><span class="p">(</span><span class="n">light</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">],</span> <span class="n">ON_PAYLOAD</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">updateLightValue</span><span class="p">(</span><span class="n">light_id</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">toggleDevice</span><span class="p">(</span><span class="n">light</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span></div>
+    
+<div class="viewcode-block" id="hive.changeBrightness"><a class="viewcode-back" href="../hive_class.html#hive_class.hive.changeBrightness">[docs]</a>    <span class="k">def</span> <span class="nf">changeBrightness</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">light_id</span><span class="p">,</span> <span class="n">brightness</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Change the brightness of a light</span>
+<span class="sd">        </span>
+<span class="sd">        Change the brightness of a light. If the value is below the minimum value of 100</span>
+<span class="sd">        or the maximum value of 0, the minimum or maximum value respectively will be used.</span>
+<span class="sd">        </span>
+<span class="sd">        :param self: Instance of hive class</span>
+<span class="sd">        :param light_id: String representing ID of the light</span>
+<span class="sd">        :param brightness: Integer of the value to set brightness to (Min 0, Max 100)</span>
+<span class="sd">        :raises ValueError: Nothing yet</span>
+<span class="sd">        :return: Nothing yet</span>
+<span class="sd">        :rtype: None\</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">brightness</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">brightness</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">brightness</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">):</span>
+            <span class="n">brightness</span> <span class="o">=</span> <span class="mi">100</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sendDeviceValue</span><span class="p">(</span><span class="n">light_id</span><span class="p">,</span> <span class="n">BRIGHTNESS_PAYLOAD</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">brightness</span><span class="p">))</span>
+        
+        <span class="k">return</span> <span class="n">brightness</span></div>
+    
+<div class="viewcode-block" id="hive.changeColourTemperature"><a class="viewcode-back" href="../hive_class.html#hive_class.hive.changeColourTemperature">[docs]</a>    <span class="k">def</span> <span class="nf">changeColourTemperature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">light_id</span><span class="p">,</span> <span class="n">temperature</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Change the colour temperature of a tunable light</span>
+<span class="sd">        </span>
+<span class="sd">        Change the colour temperature of a tunable light. If the value is below the</span>
+<span class="sd">        minimum value of 2700 or the maximum value of 6533, the minimum or maximum value</span>
+<span class="sd">        respectively will be used.</span>
+<span class="sd">        </span>
+<span class="sd">        :param self: Instance of hive class</span>
+<span class="sd">        :param light_id: String representing ID of the light</span>
+<span class="sd">        :param temperature: Integer to set temperature value to (Min 2700, Max 6533)</span>
+<span class="sd">        :raises ValueError: Nothing yet</span>
+<span class="sd">        :return: Nothing yet</span>
+<span class="sd">        :rtype: None\</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">temperature</span> <span class="o">&lt;</span> <span class="mi">2700</span><span class="p">):</span>
+            <span class="n">temperature</span> <span class="o">=</span> <span class="mi">2700</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">temperature</span> <span class="o">&gt;</span> <span class="mi">6533</span><span class="p">):</span>
+            <span class="n">temperature</span> <span class="o">=</span> <span class="mi">6533</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sendDeviceValue</span><span class="p">(</span><span class="n">light_id</span><span class="p">,</span> <span class="n">TEMPERATURE_PAYLOAD</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">temperature</span><span class="p">))</span>
+        
+        <span class="k">return</span> <span class="n">temperature</span></div>
+            
+    <span class="c1">#load all the global values from the json config and return the schedule array fro processing</span>
+<div class="viewcode-block" id="hive.loadJSON"><a class="viewcode-back" href="../hive_class.html#hive_class.hive.loadJSON">[docs]</a>    <span class="k">def</span> <span class="nf">loadJSON</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s1">&#39;Europe/London&#39;</span><span class="p">))</span>
+        <span class="c1">#reads in the JSON array containing the lights schedule</span>
+        <span class="n">json_data</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="s2">&quot;schedule.json&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json_data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">username</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;schedule&#39;</span><span class="p">]</span></div>
+                
+<div class="viewcode-block" id="hive.hive_main"><a class="viewcode-back" href="../hive_class.html#hive_class.hive.hive_main">[docs]</a>    <span class="k">def</span> <span class="nf">hive_main</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">schedule</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loadJSON</span><span class="p">()</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Python Hive</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../error.html"><code class="docutils literal notranslate"><span class="pre">error</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ellipse.html"><code class="docutils literal notranslate"><span class="pre">ellipse</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hive_class.html"><code class="docutils literal notranslate"><span class="pre">hive_class</span></code></a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Jon Gullidge.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

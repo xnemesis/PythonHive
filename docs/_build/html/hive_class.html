@@ -1,0 +1,437 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>hive_class &#8212; Python Hive 0.0.2a documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="ellipse" href="ellipse.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-hive_class">
+<span id="hive-class"></span><h1><a class="reference internal" href="#module-hive_class" title="hive_class"><code class="xref py py-mod docutils literal notranslate"><span class="pre">hive_class</span></code></a><a class="headerlink" href="#module-hive_class" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="hive_class.hive">
+<em class="property">class </em><code class="descclassname">hive_class.</code><code class="descname">hive</code><a class="reference internal" href="_modules/hive_class.html#hive"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hive_class.hive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hive device control class        This class controls hive devices. Currently, this only supports lights and groups of    lights.</p>
+<dl class="method">
+<dt id="hive_class.hive._getDevices">
+<code class="descname">_getDevices</code><span class="sig-paren">(</span><em>force=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hive_class.html#hive._getDevices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hive_class.hive._getDevices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets a list of the devices</p>
+<p>Gets a list of Hive devices. Currently, this only supports groups and lights.
+This should not be called directly from outside the class.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>self</strong> – Instance of hive class</li>
+<li><strong>force</strong> – Boolean that forces a refresh of devices with the server</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><strong>ValueError</strong> – Nothing yet</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">None</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">modules <a class="reference internal" href="#hive_class.hive.getLights" title="hive_class.hive.getLights"><code class="xref py py-func docutils literal notranslate"><span class="pre">getLights()</span></code></a>, <a class="reference internal" href="#hive_class.hive.getGroups" title="hive_class.hive.getGroups"><code class="xref py py-func docutils literal notranslate"><span class="pre">getGroups()</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="hive_class.hive._sendDeviceValue">
+<code class="descname">_sendDeviceValue</code><span class="sig-paren">(</span><em>light_id</em>, <em>payload</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hive_class.html#hive._sendDeviceValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hive_class.hive._sendDeviceValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="hive_class.hive.changeBrightness">
+<code class="descname">changeBrightness</code><span class="sig-paren">(</span><em>light_id</em>, <em>brightness</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hive_class.html#hive.changeBrightness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hive_class.hive.changeBrightness" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change the brightness of a light</p>
+<p>Change the brightness of a light. If the value is below the minimum value of 100
+or the maximum value of 0, the minimum or maximum value respectively will be used.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>self</strong> – Instance of hive class</li>
+<li><strong>light_id</strong> – String representing ID of the light</li>
+<li><strong>brightness</strong> – Integer of the value to set brightness to (Min 0, Max 100)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><strong>ValueError</strong> – Nothing yet</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Nothing yet</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="hive_class.hive.changeColourTemperature">
+<code class="descname">changeColourTemperature</code><span class="sig-paren">(</span><em>light_id</em>, <em>temperature</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hive_class.html#hive.changeColourTemperature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hive_class.hive.changeColourTemperature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change the colour temperature of a tunable light</p>
+<p>Change the colour temperature of a tunable light. If the value is below the
+minimum value of 2700 or the maximum value of 6533, the minimum or maximum value
+respectively will be used.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>self</strong> – Instance of hive class</li>
+<li><strong>light_id</strong> – String representing ID of the light</li>
+<li><strong>temperature</strong> – Integer to set temperature value to (Min 2700, Max 6533)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><strong>ValueError</strong> – Nothing yet</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Nothing yet</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="hive_class.hive.getApiKey">
+<code class="descname">getApiKey</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/hive_class.html#hive.getApiKey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hive_class.hive.getApiKey" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtains the Api key</p>
+<p>Sends the username and password from the configuration file to obtain the api key.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>self</strong> – Instance of hive class</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><strong>ValueError</strong> – Nothing yet</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Api Key</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="hive_class.hive.getGroupLights">
+<code class="descname">getGroupLights</code><span class="sig-paren">(</span><em>group_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hive_class.html#hive.getGroupLights"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hive_class.hive.getGroupLights" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets a list of the lights associated with a group</p>
+<p>Gets a list of Hive light devices associated with a group.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>self</strong> – Instance of hive class</li>
+<li><strong>group_id</strong> – String representing ID of the group</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><strong>ValueError</strong> – Nothing yet</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">List of groups</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dictionary</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="hive_class.hive.getGroups">
+<code class="descname">getGroups</code><span class="sig-paren">(</span><em>force=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hive_class.html#hive.getGroups"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hive_class.hive.getGroups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets a list of the groups</p>
+<p>Gets a list of Hive group devices.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>self</strong> – Instance of hive class</li>
+<li><strong>force</strong> – Boolean that forces a refresh of devices with the server</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><strong>ValueError</strong> – Nothing yet</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">List of groups</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dictionary</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="hive_class.hive.getLights">
+<code class="descname">getLights</code><span class="sig-paren">(</span><em>force=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hive_class.html#hive.getLights"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hive_class.hive.getLights" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets a list of the lights</p>
+<p>Gets a list of Hive light devices.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>self</strong> – Instance of hive class</li>
+<li><strong>force</strong> – Boolean that forces a refresh of devices with the server</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><strong>ValueError</strong> – Nothing yet</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">List of lights</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dictionary</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="hive_class.hive.getLocalModifiedTime">
+<code class="descname">getLocalModifiedTime</code><span class="sig-paren">(</span><em>light_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hive_class.html#hive.getLocalModifiedTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hive_class.hive.getLocalModifiedTime" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="hive_class.hive.getRemoteModifiedTime">
+<code class="descname">getRemoteModifiedTime</code><span class="sig-paren">(</span><em>light_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hive_class.html#hive.getRemoteModifiedTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hive_class.hive.getRemoteModifiedTime" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="hive_class.hive.getSunrise">
+<code class="descname">getSunrise</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/hive_class.html#hive.getSunrise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hive_class.hive.getSunrise" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="hive_class.hive.getSunset">
+<code class="descname">getSunset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/hive_class.html#hive.getSunset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hive_class.hive.getSunset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="hive_class.hive.hive_main">
+<code class="descname">hive_main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/hive_class.html#hive.hive_main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hive_class.hive.hive_main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="hive_class.hive.isDayTime">
+<code class="descname">isDayTime</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/hive_class.html#hive.isDayTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hive_class.hive.isDayTime" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="hive_class.hive.isLightOn">
+<code class="descname">isLightOn</code><span class="sig-paren">(</span><em>light_id</em>, <em>force=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hive_class.html#hive.isLightOn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hive_class.hive.isLightOn" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="hive_class.hive.isOverridden">
+<code class="descname">isOverridden</code><span class="sig-paren">(</span><em>light_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hive_class.html#hive.isOverridden"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hive_class.hive.isOverridden" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="hive_class.hive.loadJSON">
+<code class="descname">loadJSON</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/hive_class.html#hive.loadJSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hive_class.hive.loadJSON" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="hive_class.hive.saveModifiedTime">
+<code class="descname">saveModifiedTime</code><span class="sig-paren">(</span><em>light_id</em>, <em>timestamp</em>, <em>lightOn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hive_class.html#hive.saveModifiedTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hive_class.hive.saveModifiedTime" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="hive_class.hive.toggleAllLights">
+<code class="descname">toggleAllLights</code><span class="sig-paren">(</span><em>status=2</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hive_class.html#hive.toggleAllLights"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hive_class.hive.toggleAllLights" title="Permalink to this definition">¶</a></dt>
+<dd><p>Toggles all light devices</p>
+<p>Toggles that status of all lights to either on, off, or the reverse of their
+current state.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>self</strong> – Instance of hive class</li>
+<li><strong>status</strong> – Integer representing the state to set devices to
+0 is off, 1 is on, 2 is the reverse of current state</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><strong>ValueError</strong> – Nothing yet</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Nothing yet</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="hive_class.hive.toggleDevice">
+<code class="descname">toggleDevice</code><span class="sig-paren">(</span><em>device_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hive_class.html#hive.toggleDevice"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hive_class.hive.toggleDevice" title="Permalink to this definition">¶</a></dt>
+<dd><p>Toggles a device</p>
+<p>Toggles that status of a device to either off if currently on, or on if
+currently off</p>
+<p>This works with individual lights and groups.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>self</strong> – Instance of hive class</li>
+<li><strong>device_id</strong> – String representing ID of the device</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><a class="reference internal" href="error.html#error.hiveError" title="error.hiveError"><strong>hiveError</strong></a> – See hiveError for more info</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">True if device has been turned on, False if device has been turned off.
+Returns None if neither of these actions has happened.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Boolean or None</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="hive_class.hive.updateLightValue">
+<code class="descname">updateLightValue</code><span class="sig-paren">(</span><em>light_id</em>, <em>key</em>, <em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hive_class.html#hive.updateLightValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hive_class.hive.updateLightValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Python Hive</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="error.html"><code class="docutils literal notranslate"><span class="pre">error</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="ellipse.html"><code class="docutils literal notranslate"><span class="pre">ellipse</span></code></a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">hive_class</span></code></a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="ellipse.html" title="previous chapter"><code class="docutils literal notranslate"><span class="pre">ellipse</span></code></a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Jon Gullidge.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/hive_class.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
