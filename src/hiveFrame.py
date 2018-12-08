@@ -5,6 +5,7 @@ from ellipseButton import ellipseButton
 from hiveDeviceController import hive
 from error import hiveError
 from pprint import pprint
+from slider import pathSlider
 
 QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
 
@@ -15,9 +16,9 @@ class windowFrame(QtWidgets.QGraphicsView):
 
             self.setScene(QtWidgets.QGraphicsScene(self))
             self.setBackgroundBrush(QtGui.QColor(QtCore.Qt.darkGray))
-            self.setRenderHints(self.renderHints() | QtGui.QPainter.Antialiasing  | \
+            self.setRenderHints(self.renderHints() | \
+                                QtGui.QPainter.Antialiasing  | \
                                 QtGui.QPainter.SmoothPixmapTransform)
-        
             hiveLight = hive()
             arrDevices = hiveLight.getDevices()
         
@@ -53,18 +54,25 @@ class windowFrame(QtWidgets.QGraphicsView):
                     item.setPercentage(hiveLight.getBrightness(id))
                     item.setFillBrush(QtGui.QBrush(QtGui.QColor(QtCore.Qt.lightGray)))
                 
-                item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable)
-            
+                item.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable)
                 self.scene().addItem(item)
                 self.createBrightnessBtns(id, hiveLight, item, circX + (w / 2), circY + (h / 2))
                 self.writeText(device['name'], circX , circY, w, h)
             
+                c1 = QtCore.QPointF(5, 15) 
+                c2 = QtCore.QPointF(220, 15) 
+                path = QtGui.QPainterPath(QtCore.QPointF(5, -100)) 
+                path.cubicTo(c1, c2, QtCore.QPointF(235, -100))
+                sslider = pathSlider(True, path, minimum=0, maximum=100)
+                sslider.move(circX + 5, circY + (h // 2))
+                sslider.setAttribute(QtCore.Qt.WA_NoMousePropagation)
+                self.scene().addWidget(sslider)
+                
             circX, circY = 0, 0
             item = ellipseButton(None, hiveLight, None, circX, circY, w, h)
-            item.setAcceptHoverEvents(True)
             item.setPen(pen)
             item.setBrush(brush)
-            item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable)
+            item.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable)
             self.scene().addItem(item)
             self.writeText("Turn Off All", circX, circY, w, h)
     
@@ -75,13 +83,17 @@ class windowFrame(QtWidgets.QGraphicsView):
             item.setAcceptHoverEvents(True)
             item.setPen(pen)
             item.setBrush(brush)
-            item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable)
+            item.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable)
             self.scene().addItem(item)
             self.writeText("Refresh", circX, circY, w, h)
+<<<<<<< HEAD
+
+=======
             
             sslider = pathSlider(minimum=0, maximum=100)
             self.scene().addWidget(sslider)
         
+>>>>>>> 3eb69b76cfe8b87d2f1a95811b9238621859784d
         except ZeroDivisionError:
             sys.exit("Unable to connect to the server")
         except:

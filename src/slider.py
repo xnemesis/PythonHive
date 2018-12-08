@@ -2,24 +2,41 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 
 class pathSlider(QtWidgets.QAbstractSlider):
-    def __init__(self, path=QtGui.QPainterPath(), *args, **kwargs):
+    def __init__(self, inverse=False, path=QtGui.QPainterPath(), *args, **kwargs):
+        pprint(inverse)
         super(pathSlider, self).__init__(*args, **kwargs)
         self._path = path
         self.stroke_path = self._path
         self.scale_path = self._path
-        self.setPath()
+        self._inverse = inverse
+        self.setPath(self._path)
         self.setAttribute(Qt.WA_NoSystemBackground)
 
     def setPath(self, path = None):
         if (path is None):
-            self._path = QtGui.QPainterPath()
-            c1 = QtCore.QPointF(5, -15)
-            c2 = QtCore.QPointF(220, -15)
-            self._path = QtGui.QPainterPath(QtCore.QPointF(5, 100))
-            self._path.cubicTo(c1, c2, QtCore.QPointF(235, 100))
+            self._path = QtGui.QPainterPath()                                
+            self._path.translate(-self._path.boundingRect().topLeft())
+            if (self._inverse):
+                '''c1 = QtCore.QPointF(5, -15) 
+                c2 = QtCore.QPointF(220, -15) 
+                self._path = QtGui.QPainterPath(QtCore.QPointF(5, 100)) 
+                self._path.cubicTo(c1, c2, QtCore.QPointF(235, 100))'''
+                c1 = QtCore.QPointF(5, 15) 
+                c2 = QtCore.QPointF(220, 15) 
+                self._path = QtGui.QPainterPath(QtCore.QPointF(5, -100)) 
+                self._path.cubicTo(c1, c2, QtCore.QPointF(235, -100))
+                '''c1 = QtCore.QPointF(5, 15)
+                c2 = QtCore.QPointF(220, 15)
+                self._path = QtGui.QPainterPath(QtCore.QPointF(5, -100))
+                self._path.cubicTo(c1, c2, QtCore.QPointF(235, -100))'''
+            else:
+                c1 = QtCore.QPointF(5, -15)
+                c2 = QtCore.QPointF(220, -15)
+                self._path = QtGui.QPainterPath(QtCore.QPointF(5, 100))
+                self._path.cubicTo(c1, c2, QtCore.QPointF(235, 100))
         else:
+            path.translate(-path.boundingRect().topLeft())
             self._path = path
-            
         self.update()
 
     def path(self):
@@ -31,20 +48,20 @@ class pathSlider(QtWidgets.QAbstractSlider):
         border = 10
         painter = QtGui.QPainter(self)
         painter.setRenderHint(QtGui.QPainter.Antialiasing)
-        sx = (self.rect().width() -2*border) / self.path.boundingRect().width()
-        sy = (self.rect().height() -2*border) /self.path.boundingRect().height()
+        sx, sy = (self.rect().width() -2*border)/self.path.boundingRect().width(), \
+                 (self.rect().height() -2*border)/self.path.boundingRect().height()
         tr = QtGui.QTransform()
         tr.translate(border, border)
         tr.scale(sx, sy)
         self.scale_path = tr.map(self.path)
         stroker = QtGui.QPainterPathStroker()
         stroker.setCapStyle(QtCore.Qt.RoundCap)
-        stroker.setWidth(10)
+        stroker.setWidth(8)
         stroke_path = stroker.createStroke(self.scale_path).simplified()
         painter.setPen(QtGui.QPen(self.palette().color(QtGui.QPalette.Shadow), 1))
         painter.setBrush(QtGui.QBrush(self.palette().color(QtGui.QPalette.Midlight)))
         painter.drawPath(stroke_path)
-        stroker.setWidth(20)
+        stroker.setWidth(10)
         self.stroke_path = stroker.createStroke(self.scale_path).simplified()
         percentage = (self.value() - self.minimum())/(self.maximum() - self.minimum())
         highlight_path = QtGui.QPainterPath()
@@ -63,8 +80,7 @@ class pathSlider(QtWidgets.QAbstractSlider):
         painter.drawPath(new_phighlight_path)
 
         opt  = QtWidgets.QStyleOptionSlider()
-        r = self.style().subControlRect(QtWidgets.QStyle.CC_Slider, opt, 
-                                        QtWidgets.QStyle.SC_SliderHandle, self)
+        r = self.style().subControlRect(QtWidgets.QStyle.CC_Slider, opt, QtWidgets.QStyle.SC_SliderHandle, self)
         pixmap = QtGui.QPixmap(r.width() + 2*2, r.height() + 2*2)
         pixmap.fill(QtCore.Qt.transparent)
         r = pixmap.rect().adjusted(2, 2, -2, -2)
@@ -77,8 +93,9 @@ class pathSlider(QtWidgets.QAbstractSlider):
         r.moveCenter(p.toPoint())
         painter.drawPixmap(r, pixmap)
 
+
     def minimumSizeHint(self):
-        return QtCore.QSize(5,5)#15§, 15)
+        return QtCore.QSize(5,5)
 
     def sizeHint(self):
         return QtCore.QSize(95, 50)
