@@ -9,12 +9,13 @@ ON_PAYLOAD = \
     '{"nodes":[{"attributes":{"state":{"targetValue":"ON"}}}]}'
 OFF_PAYLOAD = \
     '{"nodes":[{"attributes":{"state":{"targetValue":"OFF"}}}]}'
+API_ADDR = "https://api-prod.bgchprod.info/omnia/"
 
 # Escaped so value can be formatted
 BRIGHTNESS_PAYLOAD = \
     '{{"nodes":[{{"attributes":{{"brightness":{{"targetValue":"{}"}}}}}}]}}'
 TEMPERATURE_PAYLOAD = \
-    '{{"nodes":[{{"attributes":{{"colourTemperature":{{"targetValue":"{}"}}}}}}]}}'
+ '{{"nodes":[{{"attributes":{{"colourTemperature":{{"targetValue":"{}"}}}}}}]}}'
 
 class hive:
     """Hive device control class\
@@ -78,7 +79,8 @@ class hive:
             print("An exception occured: ", hE.value)
 
         except:
-            print("Unexpected exception in hive._sendDeviceValue(): ", sys.exc_info()[0])
+            print("Unexpected exception in hive._sendDeviceValue():" + \
+                  "{} - {}".format(sys.exc_info()[0], sys.exc_info()[1]))
 
         else:
             return self.apikey
@@ -156,7 +158,7 @@ class hive:
                     'Accept':'application/vnd.alertme.zoo-6.4+json',
                     'Content-Type':'application/json'
                 }
-                r = requests.get("https://api-prod.bgchprod.info/omnia/nodes/",headers=headers)
+                r = requests.get(API_ADDR+"nodes/",headers=headers)
 
                 if (r.status_code is not 200):
                     raise hiveError(r.status_code)
@@ -169,11 +171,15 @@ class hive:
                         self.arrDevices[rt['id']] = {}
                         self.arrDevices[rt['id']]['id'] = rt['id']
                         self.arrDevices[rt['id']]['name'] = rt['name']
-                        self.arrDevices[rt['id']]['brightness'] = rt['attributes']['brightness']['reportedValue']
-                        if (rt['attributes']['state']['reportedValue'] == 'OFF'):
+                        self.arrDevices[rt['id']]['brightness'] = \
+                            rt['attributes']['brightness']['reportedValue']
+                        if (rt['attributes']['state']['reportedValue'] =='OFF'):
                             self.arrDevices[rt['id']]['status'] = False
                         else:
                             self.arrDevices[rt['id']]['status'] = True
+                        if (rt['attributes']['nodeType']['reportedValue'].find("class.tunable.light") > 0):
+                            self.arrDevices[rt['id']]['colourTemp'] = \
+                                rt['attributes']['colourTemperature']['reportedValue']
                         # Store device type for quicker checking later
                         self.arrDevices[rt['id']]['type'] = 'light'
                     elif (rt['attributes']['nodeType']['reportedValue'].find("class.synthetic.group") > 0):
@@ -182,14 +188,16 @@ class hive:
                         self.arrDevices[rt['id']]['id'] = rt['id']
                         self.arrDevices[rt['id']]['name'] = rt['name']
                         self.arrDevices[rt['id']]['lights'] = {}
-                        self.arrDevices[rt['id']]['lights'] = self.getGroupLights(rt['id'])
+                        self.arrDevices[rt['id']]['lights'] = \
+                            self.getGroupLights(rt['id'])
                         # Store device type for quicker checking later
                         self.arrDevices[rt['id']]['type'] = 'group'
         except hiveError as hE:
             print("An exception occured: ", hE.value)
 
         except:
-            print("Unexpected exception in hive._getDeviceValue(): ", sys.exc_info()[0])
+            print("Unexpected exception in hive._getDevices():" + \
+                  "{} - {}".format(sys.exc_info()[0], sys.exc_info()[1]))
                     
     def _initGroupStatus(self):
         try:
@@ -201,8 +209,8 @@ class hive:
             print("An exception occured: ", hE.value)
 
         except:
-            print("Unexpected exception in hive._initGroupStatus(): ", sys.exc_info()[0])
-            pprint(sys.exc_info())
+            print("Unexpected exception in hive._initGroupStatus():" + \
+                  "{} - {}".format(sys.exc_info()[0], sys.exc_info()[1]))
             
     def _initCustomGroups(self):
         try:
@@ -211,7 +219,8 @@ class hive:
                 id = self.data['custom_groups'][i]['id']
                 self.arrDevices[id] = {}
                 self.arrDevices[id]['id'] = id
-                self.arrDevices[id]['name'] = self.data['custom_groups'][i]['name']
+                self.arrDevices[id]['name'] = \
+                    self.data['custom_groups'][i]['name']
                 self.arrDevices[id]['lights'] = \
                     list(self.data['custom_groups'][i]['lights'].values())
                 self.arrDevices[id]['type'] = 'group'
@@ -219,7 +228,8 @@ class hive:
             print("An exception occured: ", hE.value)
 
         except:
-            print("Unexpected exception in hive._initCustomGroups(): ", sys.exc_info()[0])
+            print("Unexpected exception in hive._initCustomGroups():" + \
+                  "{} - {}".format(sys.exc_info()[0], sys.exc_info()[1]))
 
     def getGroupLights(self, group_id):
         """Gets a list of the lights associated with a group
@@ -252,7 +262,8 @@ class hive:
             print("An exception occured: ", hE.value)
             
         except:
-            print("Unexpected exception in hive.getGroupLights(): ", sys.exc_info()[0])
+            print("Unexpected exception in hive.getGroupLights():" + \
+                  "{} - {}".format(sys.exc_info()[0], sys.exc_info()[1]))
             
         else:   
             return arrGroupLights
@@ -268,7 +279,7 @@ class hive:
                     'Accept':'application/vnd.alertme.zoo-6.4+json',
                     'Content-Type':'application/json'
                 }
-                r = requests.put("https://api-prod.bgchprod.info/omnia/nodes/"+device_id,headers=headers)
+                r = requests.put(API_ADDR+"nodes/"+device_id,headers=headers)
 
                 #presumes light is on
                 lightOn = True
@@ -297,7 +308,8 @@ class hive:
             print("An exception occured: ", hE.value)
 
         except:
-            print("Unexpected exception in hive.isLightOn(): ", sys.exc_info()[0])
+            print("Unexpected exception in hive.isLightOn():" + \
+                  "{} - {}".format(sys.exc_info()[0], sys.exc_info()[1]))
         
     def updateLightValue(self, device_id, key, value):
         if (device_id in self.arrDevices):
@@ -335,7 +347,7 @@ class hive:
             'Accept':'application/vnd.alertme.zoo-6.4+json',
             'Content-Type':'application/json'
         }
-        r = requests.put("https://api-prod.bgchprod.info/omnia/nodes/"+light_id,headers=headers)
+        r = requests.put(API_ADDR+"nodes/"+light_id,headers=headers)
 
         #presumes light is on
         return r.json()['nodes'][0]['attributes']['state']['reportReceivedTime']
@@ -383,8 +395,9 @@ class hive:
                 'Accept':'application/vnd.alertme.zoo-6.4+json',
                 'Content-Type':'application/json'
             }
-            r = requests.put("https://api-prod.bgchprod.info/omnia/nodes/"
-                             +device_id,headers=headers,data=payload)
+            r = requests.put(
+                    API_ADDR+"nodes/"+device_id,headers=headers,data=payload
+                )
             #modifiedTime= self.getLocalModifiedTime(light_id)
             #self.saveModifiedTime(light_id,modifiedTime, True)
             if (r.status_code is not 200):
@@ -394,7 +407,8 @@ class hive:
             print("An exception occured: ", hE.value)
 
         except:
-            print("Unexpected exception in hive._sendDeviceValue(): ", sys.exc_info()[0])
+            print("Unexpected exception in hive._sendDeviceValue():" + \
+                  "{} - {}".format(sys.exc_info()[0], sys.exc_info()[1]))
 
         else:
             return (r.status_code)
@@ -411,8 +425,9 @@ class hive:
         :param self: Instance of hive class
         :param device_id: String representing ID of the device
         :raises hiveError: See hiveError for more info
-        :return: True if device has been turned on, False if device has been turned off.
-                 Returns None if neither of these actions has happened.
+        :return: True if device has been turned on, False if device has been 
+                 turned off. Returns None if neither of these actions has                 
+                 happened.
         :rtype: Boolean or None\
         """
         try:
@@ -454,15 +469,15 @@ class hive:
             print("An exception occured: ", hE.value)
             
         except:
-            print("Unexpected exception in hive.toggleDevice(): ", sys.exc_info()[0])
-            pprint(sys.exc_info())
+            print("Unexpected exception in hive.toggleDevice():" + \
+                  "{} - {}".format(sys.exc_info()[0], sys.exc_info()[1]))
     
     # Toggles all lights, 0 = off, 1 = on, 2 = toggle all to reverse state
     def toggleAllLights(self, status = 2):
         """Toggles all light devices
         
-        Toggles that status of all lights to either on, off, or the reverse of their
-        current state.
+        Toggles that status of all lights to either on, off, or the reverse of 
+        their current state.
         
         :param self: Instance of hive class
         :param status: Integer representing the state to set devices to
@@ -488,13 +503,14 @@ class hive:
             print("An exception occured: ", hE.value)
 
         except:
-            print("Unexpected exception in hive.toggleAllLights(): ", sys.exc_info()[0])
+            print("Unexpected exception in hive.toggleAllLights():" + \
+                  "{} - {}".format(sys.exc_info()[0], sys.exc_info()[1]))
 
     def getBrightness(self, device_id):
         """Get the brightness of a light
         
-        Get the brightness of a light. If a group is specified, it will return the average
-        of the groups values.
+        Get the brightness of a light. If a group is specified, it will return 
+        the average of the groups values.
         
         :param self: Instance of hive class
         :param light_id: String representing ID of the light
@@ -516,7 +532,8 @@ class hive:
             print("An exception occured: ", hE.value)
 
         except:
-            print("Unexpected exception in hive.getBrightness(): ", sys.exc_info()[0])
+            print("Unexpected exception in hive.getBrightness():" + \
+                  "{} - {}".format(sys.exc_info()[0], sys.exc_info()[1]))
 
         else:
             return brightness
@@ -524,12 +541,13 @@ class hive:
     def _setBrightness(self, device_id, brightness):
         """Change the brightness of a light
         
-        Change the brightness of a light. If the value is below the minimum value of 100
-        or the maximum value of 0, the minimum or maximum value respectively will be used.
+        Change the brightness of a light. If the value is below the minimum 
+        value of 100 or the maximum value of 0, the minimum or maximum value 
+        respectively will be used.
         
         :param self: Instance of hive class
         :param light_id: String representing ID of the light
-        :param brightness: Integer of the value to set brightness to (Min 0, Max 100)
+        :param brightness: Integer of value to set brightness (Min 0, Max 100)
         :raises ValueError: Nothing yet
         :return: Nothing yet
         :rtype: None\
@@ -541,12 +559,14 @@ class hive:
                 brightness = 100
         
             if (self.arrDevices[device_id]['type'] == "light"):
-                self._sendDeviceValue(device_id, BRIGHTNESS_PAYLOAD.format(brightness))
+                self._sendDeviceValue(device_id,
+                                      BRIGHTNESS_PAYLOAD.format(brightness))
                 self.updateLightValue(device_id, "brightness", brightness)
             elif (self.arrDevices[device_id]['type'] == "group"):
                 listLen = len(self.arrDevices[device_id]['lights'])
                 for i in range(0, listLen):
-                    self._setBrightness(self.arrDevices[device_id]['lights'][i], brightness)
+                    self._setBrightness(self.arrDevices[device_id]['lights'][i],
+                                        brightness)
                     self.updateLightValue(self.arrDevices[device_id]['lights'][i],
                                           "brightness", brightness)
 
@@ -554,7 +574,8 @@ class hive:
             print("An exception occured: ", hE.value)
 
         except:
-            print("Unexpected exception in hive._setBrightness(): ", sys.exc_info()[0])
+            print("Unexpected exception in hive._setBrightness():" + \
+                  "{} - {}".format(sys.exc_info()[0], sys.exc_info()[1]))
 
         else:
             return brightness
@@ -572,7 +593,8 @@ class hive:
                     brightnessVal = \
                         self.getBrightness(self.arrDevices[device_id]['lights'][i]) + brightness
 
-                    self._setBrightness(self.arrDevices[device_id]['lights'][i], brightnessVal)
+                    self._setBrightness(self.arrDevices[device_id]['lights'][i],
+                                        brightnessVal)
                     self.updateLightValue(self.arrDevices[device_id]['lights'][i],
                                           "brightness", brightnessVal)
 
@@ -580,7 +602,8 @@ class hive:
             print("An exception occured: ", hE.value)
 
         except:
-            print("Unexpected exception in hive.increaseBrightness(): ", sys.exc_info()[0])
+            print("Unexpected exception in hive.increaseBrightness():" + \
+                  "{} - {}".format(sys.exc_info()[0], sys.exc_info()[1]))
 
         else:
             return brightnessVal
@@ -598,7 +621,8 @@ class hive:
                     brightnessVal = \
                         self.getBrightness(self.arrDevices[device_id]['lights'][i]) - brightness
                         
-                    self._setBrightness(self.arrDevices[device_id]['lights'][i], brightnessVal)
+                    self._setBrightness(self.arrDevices[device_id]['lights'][i],
+                                        brightnessVal)
                     self.updateLightValue(self.arrDevices[device_id]['lights'][i],
                                           "brightness", brightnessVal)
                                           
@@ -606,21 +630,43 @@ class hive:
             print("An exception occured: ", hE.value)
 
         except:
-            print("Unexpected exception in hive.decreaseBrightness(): ", sys.exc_info()[0])
+            print("Unexpected exception in hive.decreaseBrightness():" + \
+                  "{} - {}".format(sys.exc_info()[0], sys.exc_info()[1]))
 
         else:
             return brightnessVal
-            
-    def changeColourTemperature(self, light_id, temperature):
-        """Change the colour temperature of a tunable light
+
+    def getColourTemperature(self, light_id):
+        try:
+            cTemp = 0
+            if ("colourTemp" in self.arrDevices[light_id]):
+                if (self.arrDevices[light_id]['type'] == "light"):
+                    cTemp = self.arrDevices[light_id]['colourTemp']
+                '''elif (self.arrDevices[device_id]['type'] == "group"):
+                    listLen = len(self.arrDevices[device_id]['lights'])
+                    for i in range(0, listLen):
+                        cTemp += self.getColourTemp(self.arrDevices[device_id]['lights'][i])
+                    cTemp /= listLen'''
+        except hiveError as hE:
+            print("An exception occured: ", hE.value)
+
+        except:
+            print("Unexpected exception in hive.getColourTemperature():" + \
+                  "\n{} - {}".format(sys.exc_info()[0], sys.exc_info()[1]))
+            #pprint(sys.exc_info())
+        else:
+            return cTemp
+
+    def setColourTemperature(self, light_id, temperature):
+        """Set the colour temperature of a tunable light
         
-        Change the colour temperature of a tunable light. If the value is below the
-        minimum value of 2700 or the maximum value of 6533, the minimum or maximum value
-        respectively will be used.
+        Set the colour temperature of a tunable light. If the value is below the
+        minimum value of 2700 or the maximum value of 6533, the minimum or 
+        maximum value respectively will be used.
         
         :param self: Instance of hive class
         :param light_id: String representing ID of the light
-        :param temperature: Integer to set temperature value to (Min 2700, Max 6533)
+        :param temperature: Integer to set temperature value (Min 2700,Max 6533)
         :raises ValueError: Nothing yet
         :return: Nothing yet
         :rtype: None\
@@ -631,13 +677,15 @@ class hive:
             elif (temperature > 6533):
                 temperature = 6533
             
-            self._sendDeviceValue(light_id, TEMPERATURE_PAYLOAD.format(temperature))
+            self._sendDeviceValue(light_id, \
+                                  TEMPERATURE_PAYLOAD.format(temperature))
             
         except hiveError as hE:
             print("An exception occured: ", hE.value)
 
         except:
-            print("Unexpected exception in hive.changeColourTemperature(): ", sys.exc_info()[0])
+            print("Unexpected exception in hive.setColourTemperature():" + \
+                  "{} - {}".format(sys.exc_info()[0], sys.exc_info()[1]))
 
         else:
             return temperature
@@ -656,7 +704,8 @@ class hive:
             print("An exception occured: ", hE.value)
 
         except:
-            print("Unexpected exception in hive.loadJSON(): ", sys.exc_info()[0])
+            print("Unexpected exception in hive.loadJSON():" + \
+                  "{} - {}".format(sys.exc_info()[0], sys.exc_info()[1]))
 
         else:
             return self.data['schedule']

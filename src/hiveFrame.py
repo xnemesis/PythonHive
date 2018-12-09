@@ -1,4 +1,4 @@
-import math, itertools, sys
+import sys, math, itertools
 from PyQt5 import QtGui, QtCore, QtWidgets
 from imageLabel import imageLabel
 from ellipseButton import ellipseButton
@@ -59,14 +59,15 @@ class windowFrame(QtWidgets.QGraphicsView):
                 self.createBrightnessBtns(id, hiveLight, item, circX + (w / 2), circY + (h / 2))
                 self.writeText(device['name'], circX , circY, w, h)
             
-                c1 = QtCore.QPointF(5, 15) 
-                c2 = QtCore.QPointF(220, 15) 
-                path = QtGui.QPainterPath(QtCore.QPointF(5, -100)) 
-                path.cubicTo(c1, c2, QtCore.QPointF(235, -100))
-                sslider = pathSlider(True, path, minimum=0, maximum=100)
-                sslider.move(circX + 5, circY + (h // 2))
-                sslider.setAttribute(QtCore.Qt.WA_NoMousePropagation)
-                self.scene().addWidget(sslider)
+                if ("colourTemp" in device):
+                    c1 = QtCore.QPointF(5, 15) 
+                    c2 = QtCore.QPointF(220, 15) 
+                    path = QtGui.QPainterPath(QtCore.QPointF(5, -100)) 
+                    path.cubicTo(c1, c2, QtCore.QPointF(235, -100))
+                    sslider = pathSlider(id, hiveLight, True, path, \
+                                         minimum=0, maximum=383)
+                    sslider.move(circX + 5, circY + (h // 2))
+                    self.scene().addWidget(sslider)
                 
             circX, circY = 0, 0
             item = ellipseButton(None, hiveLight, None, circX, circY, w, h)
@@ -86,19 +87,12 @@ class windowFrame(QtWidgets.QGraphicsView):
             item.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable)
             self.scene().addItem(item)
             self.writeText("Refresh", circX, circY, w, h)
-<<<<<<< HEAD
 
-=======
-            
-            sslider = pathSlider(minimum=0, maximum=100)
-            self.scene().addWidget(sslider)
-        
->>>>>>> 3eb69b76cfe8b87d2f1a95811b9238621859784d
         except ZeroDivisionError:
             sys.exit("Unable to connect to the server")
         except:
-            print("Unexpected exception in windowFrame.__init__(): ", sys.exc_info()[0])
-            pprint(sys.exc_info())
+            print("Unexpected exception in windowFrame.__init__():" + \
+                  "{} - {}".format(sys.exc_info()[0], sys.exc_info()[1]))
 
     def writeText(self, text, x, y, maxX, maxY):
         font = QtGui.QFont('White Rabbit')
