@@ -15,8 +15,10 @@ class pathSlider(QtWidgets.QAbstractSlider):
             self._inverse = inverse
             self.setPath(self._path)
             self.setAttribute(QtCore.Qt.WA_NoSystemBackground)
-            val = (self._hiveLight.getColourTemperature(self._light) / 10) - 270
-            self.setValue(val)
+            if (self._inverse):
+                val = (self._hiveLight.getColourTemperature(self._light) / 10) \
+                       - 270
+                self.setValue(val)
         except:
             print("Unexpected exception in pathSlider.__init__():" + \
                   "{} - {}".format(sys.exc_info()[0], sys.exc_info()[1]))
@@ -122,17 +124,22 @@ class pathSlider(QtWidgets.QAbstractSlider):
         return QtCore.QSize(95, 50)
 
     def mouseReleaseEvent(self, event):
-        self.update_pos(event.pos())
         if (self._hiveLight.isLightOn(self._light)):
-            cTemp = (self.value() + 270) * 10
-            self._hiveLight.setColourTemperature(self._light, cTemp)
+            self.update_pos(event.pos())
+            if (self._inverse):
+                cTemp = (self.value() + 270) * 10
+                self._hiveLight.setColourTemperature(self._light, cTemp)
+            else:
+                self._hiveLight._setBrightness(self.value())
 
     def mousePressEvent(self, event):
-        self.update_pos(event.pos())
+        if (self._hiveLight.isLightOn(self._light)):
+            self.update_pos(event.pos())
 
     def mouseMoveEvent(self, event):
-        self.update_pos(event.pos())
-        super(pathSlider, self).mouseMoveEvent(event)
+        if (self._hiveLight.isLightOn(self._light)):
+            self.update_pos(event.pos())
+            super(pathSlider, self).mouseMoveEvent(event)
 
     def update_pos(self, point):
         try:
