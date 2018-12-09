@@ -68,6 +68,16 @@ class windowFrame(QtWidgets.QGraphicsView):
                                          minimum=0, maximum=383)
                     sslider.move(circX + 5, circY + (h // 2))
                     self.scene().addWidget(sslider)
+                    
+                c1 = QtCore.QPointF(5, -15) 
+                c2 = QtCore.QPointF(220, -15) 
+                path = QtGui.QPainterPath(QtCore.QPointF(5, 100)) 
+                path.cubicTo(c1, c2, QtCore.QPointF(235, 100))
+                sslider = pathSlider(id, hiveLight, True, path, \
+                                     minimum=0, maximum=100)
+                sslider.move(circX + 5, circY -(h // 2))
+                self.scene().addWidget(sslider)
+
                 
             circX, circY = 0, 0
             item = ellipseButton(None, hiveLight, None, circX, circY, w, h)
