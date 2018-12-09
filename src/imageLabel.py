@@ -1,4 +1,4 @@
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 from hiveDeviceController import hive
 
 class imageLabel(QtWidgets.QLabel):
@@ -12,8 +12,10 @@ class imageLabel(QtWidgets.QLabel):
     def mousePressEvent(self, event):
         if (self._hiveLight.isLightOn(self._light)):
             if (self._direction):
-                self._ellipse.setPercentage(self._hiveLight.increaseBrightness(self._light, 10))
+                ret = self._hiveLight.increaseBrightness(self._light, 10)
+                self._ellipse.setPercentage(ret)
             else:
-                self._ellipse.setPercentage(self._hiveLight.decreaseBrightness(self._light, 10))
+                ret = self._hiveLight.decreaseBrightness(self._light, 10)
+                self._ellipse.setPercentage(ret)
         
         super(QtWidgets.QLabel, self).mouseReleaseEvent(event)
