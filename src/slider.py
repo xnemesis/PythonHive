@@ -18,7 +18,9 @@ class pathSlider(QtWidgets.QAbstractSlider):
             if (self._inverse):
                 val = (self._hiveLight.getColourTemperature(self._light) / 10) \
                        - 270
-                self.setValue(val)
+            else:
+                val = self._hiveLight.getBrightness(self._light)
+            self.setValue(val)
         except:
             print("Unexpected exception in pathSlider.__init__():" + \
                   "{} - {}".format(sys.exc_info()[0], sys.exc_info()[1]))
@@ -130,7 +132,7 @@ class pathSlider(QtWidgets.QAbstractSlider):
                 cTemp = (self.value() + 270) * 10
                 self._hiveLight.setColourTemperature(self._light, cTemp)
             else:
-                self._hiveLight._setBrightness(self.value())
+                self._hiveLight._setBrightness(self._light, self.value())
 
     def mousePressEvent(self, event):
         if (self._hiveLight.isLightOn(self._light)):

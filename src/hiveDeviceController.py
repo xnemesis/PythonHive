@@ -679,6 +679,7 @@ class hive:
             
             self._sendDeviceValue(light_id, \
                                   TEMPERATURE_PAYLOAD.format(temperature))
+            self.updateLightValue(light_id, "colourTemp", temperature)
             
         except hiveError as hE:
             print("An exception occured: ", hE.value)
@@ -690,6 +691,18 @@ class hive:
         else:
             return temperature
             
+    def increaseColourTemperature(self, light_id, temperature):
+        cTemp = self.getColourTemperature(light_id)
+        cTemp += temperature
+        
+        return self.setColourTemperature(light_id, cTemp)
+        
+    def decreaseColourTemperature(self, light_id, temperature):
+        cTemp = self.getColourTemperature(light_id)
+        cTemp -= temperature
+        
+        return self.setColourTemperature(light_id, cTemp)
+    
     #load all the global values from the json config and return the schedule array fro processing
     def loadJSON(self):
         try:

@@ -19,6 +19,7 @@ class windowFrame(QtWidgets.QGraphicsView):
             self.setRenderHints(self.renderHints() | \
                                 QtGui.QPainter.Antialiasing  | \
                                 QtGui.QPainter.SmoothPixmapTransform)
+            self._buttons = True
             hiveLight = hive()
             arrDevices = hiveLight.getDevices()
         
@@ -56,28 +57,37 @@ class windowFrame(QtWidgets.QGraphicsView):
                 
                 item.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable)
                 self.scene().addItem(item)
-                self.createBrightnessBtns(id, hiveLight, item, circX + (w / 2), circY + (h / 2))
-                self.writeText(device['name'], circX , circY, w, h)
             
-                if ("colourTemp" in device):
-                    c1 = QtCore.QPointF(5, 15) 
-                    c2 = QtCore.QPointF(220, 15) 
-                    path = QtGui.QPainterPath(QtCore.QPointF(5, -100)) 
-                    path.cubicTo(c1, c2, QtCore.QPointF(235, -100))
-                    sslider = pathSlider(id, hiveLight, True, path, \
-                                         minimum=0, maximum=383)
-                    sslider.move(circX + 5, circY + (h // 2))
+                self.writeText(device['name'], circX , circY, w, h)
+                        
+                if (self._buttons):
+                    if ("colourTemp" in device):
+                        if (self._buttons):
+                            self.createCTempBtns(id, hiveLight, item,
+                                                 circX + (w /2), circY + (h /2))
+                                                 
+                    self.createBrightnessBtns(id, hiveLight, item,
+                                              circX + (w / 2), circY + (h / 2))
+
+                else:
+                    c1 = QtCore.QPointF(5, -15) 
+                    c2 = QtCore.QPointF(220, -15) 
+                    path = QtGui.QPainterPath(QtCore.QPointF(5, 100)) 
+                    path.cubicTo(c1, c2, QtCore.QPointF(235, 100))
+                    sslider = pathSlider(id, hiveLight, False, path, \
+                                         minimum=0, maximum=100)
+                    sslider.move(circX + 5, circY)
                     self.scene().addWidget(sslider)
                     
-                c1 = QtCore.QPointF(5, -15) 
-                c2 = QtCore.QPointF(220, -15) 
-                path = QtGui.QPainterPath(QtCore.QPointF(5, 100)) 
-                path.cubicTo(c1, c2, QtCore.QPointF(235, 100))
-                sslider = pathSlider(id, hiveLight, True, path, \
-                                     minimum=0, maximum=100)
-                sslider.move(circX + 5, circY -(h // 2))
-                self.scene().addWidget(sslider)
-
+                    if ("colourTemp" in device):
+                        c1 = QtCore.QPointF(5, 15) 
+                        c2 = QtCore.QPointF(220, 15) 
+                        path = QtGui.QPainterPath(QtCore.QPointF(5, -100)) 
+                        path.cubicTo(c1, c2, QtCore.QPointF(235, -100))
+                        sslider = pathSlider(id, hiveLight, True, path, \
+                                             minimum=0, maximum=383)
+                        sslider.move(circX + 5, circY + (h // 2))
+                        self.scene().addWidget(sslider)
                 
             circX, circY = 0, 0
             item = ellipseButton(None, hiveLight, None, circX, circY, w, h)
@@ -115,17 +125,31 @@ class windowFrame(QtWidgets.QGraphicsView):
         self.scene().addItem(self.dot1)
     
     def createBrightnessBtns(self, id, hiveLight, item, lx, ly):
-        label = imageLabel(id, hiveLight, item, True, self)
+        label = imageLabel(id, hiveLight, item, "brightness", True, self)
         pixmap = QtGui.QPixmap('icons/plus.png')
         label.setPixmap(pixmap)
         lx = lx - (label.width() / 2) + 250
         ly = ly - (label.height() / 2) + 170
         label.move(lx, ly)
         
-        label = imageLabel(id, hiveLight, item, False, self)
+        label = imageLabel(id, hiveLight, item, "brightness", False, self)
         pixmap = QtGui.QPixmap('icons/minus.png')
         label.setPixmap(pixmap)
         ly += 60
+        label.move(lx, ly)
+        
+    def createCTempBtns(self, id, hiveLight, item, lx, ly):
+        label = imageLabel(id, hiveLight, item, "cTemp", False, self)
+        pixmap = QtGui.QPixmap('icons/minus.png')
+        label.setPixmap(pixmap)
+        lx = lx - (label.width() / 2) + 210
+        ly = ly - (label.height() / 2) + 200
+        label.move(lx, ly)
+        
+        label = imageLabel(id, hiveLight, item, "cTemp", True, self)
+        pixmap = QtGui.QPixmap('icons/plus.png')
+        label.setPixmap(pixmap)
+        lx += 75
         label.move(lx, ly)
         
     def refreshButtons(self):
