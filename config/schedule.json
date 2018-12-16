@@ -13,8 +13,9 @@
     "comment":"8c69157a-708e-4cbc-991e-022be4f8b2fa:Hallway 2",
     "comment":"6f5b4b64-df9d-474b-8341-b232f592d9c8:Hallway 3",
     "thermostat_id":"x-x-x-x-x",
-    "username":"jon@gullidge.org",
-    "password":"Cr4mpt0n1",
+    "username":"user",
+    "password":"pass",
+    "buttons":"false",
     "custom_groups":[{
         "id":"Custom1",
         "name":"Lounge/Kitchen",

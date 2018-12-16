@@ -38,13 +38,14 @@ class hive:
         self.username = None
         self.password = None
         self.apikey = None
-        self.DEBUG =False
+        self.DEBUG = False
         self.l = Location(info=("London","UK",51.5074, 0.1278, "Europe/London"))
         self.data = None
         self.now = None
+        self.buttons = None
 
         self.arrDevices = {}
-                
+        
         #Initialise data
         self.hive_main()
         
@@ -52,6 +53,9 @@ class hive:
         self._getDevices(True)
         self._initCustomGroups()
         self._initGroupStatus()
+
+    def getButtonsSetting(self):
+        return self.buttons
 
     #sends the username/password combo to get an apikey
     def getApiKey(self, force = False):
@@ -710,8 +714,9 @@ class hive:
             #reads in the JSON array containing the lights schedule
             json_data=open("config/schedule.json").read()
             self.data = json.loads(json_data)
-            self.username= self.data['username']
-            self.password= self.data['password']
+            self.username = self.data['username']
+            self.password = self.data['password']
+            self.buttons = self.data['buttons']
 
         except hiveError as hE:
             print("An exception occured: ", hE.value)

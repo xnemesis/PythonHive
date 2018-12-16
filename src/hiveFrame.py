@@ -19,10 +19,11 @@ class windowFrame(QtWidgets.QGraphicsView):
             self.setRenderHints(self.renderHints() | \
                                 QtGui.QPainter.Antialiasing  | \
                                 QtGui.QPainter.SmoothPixmapTransform)
-            self._buttons = True
             hiveLight = hive()
             arrDevices = hiveLight.getDevices()
-        
+
+            self._buttons = hiveLight.getButtonsSetting()
+
             theta = math.radians(360)
             lColumns = (len([dev for id, dev in arrDevices.items() if dev['type'] == 'light']))
             gColumns = (len([dev for id, dev in arrDevices.items() if dev['type'] == 'group']))
@@ -59,12 +60,11 @@ class windowFrame(QtWidgets.QGraphicsView):
                 self.scene().addItem(item)
             
                 self.writeText(device['name'], circX , circY, w, h)
-                        
-                if (self._buttons):
+
+                if (self._buttons == "True"):
                     if ("colourTemp" in device):
-                        if (self._buttons):
-                            self.createCTempBtns(id, hiveLight, item,
-                                                 circX + (w /2), circY + (h /2))
+                        self.createCTempBtns(id, hiveLight, item,
+                                             circX + (w /2), circY + (h /2))
                                                  
                     self.createBrightnessBtns(id, hiveLight, item,
                                               circX + (w / 2), circY + (h / 2))
