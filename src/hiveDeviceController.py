@@ -235,11 +235,33 @@ class hive:
             print("Unexpected exception in hive._initCustomGroups():" + \
                   "{} - {}".format(sys.exc_info()[0], sys.exc_info()[1]))
 
+    def _initLightProperties(self):
+        try:
+            #Needs an interator
+            for light in self.data['light_properties']['id']:
+                if (light['id'] in arrDevices):
+                    arrDevices[light['id']]['hidden'] = light['hidden']
+        except hiveError as hE:
+            print("An exception occured: ", hE.value)
+
+        except:
+            print("Unexpected exception in hive._initLightProperties():" + \
+                  "{} - {}".format(sys.exc_info()[0], sys.exc_info()[1]))
+
+    def getDeviceProperties(self, device_id, propety):
+        try:
+            if (device_id in arrDevices
+                and property in arrDevices[device_id]):
+                return arrDevices[device_id][property]
+            else:
+                return None
+        except:
+            print("Unexpected exception in hive.getGroupLights():" + \
+                  "{} - {}".format(sys.exc_info()[0], sys.exc_info()[1]))
+
     def getGroupLights(self, group_id):
         """Gets a list of the lights associated with a group
-        
         Gets a list of Hive light devices associated with a group.
-        
         :param self: Instance of hive class
         :param group_id: String representing ID of the group
         :raises ValueError: Nothing yet
@@ -258,7 +280,7 @@ class hive:
             
             if (r.status_code is not 200):
                 raise hiveError(r.status_code)
-                
+            
             temp = r.json()['bindings']
             arrGroupLights = [rt['boundNodeId'] for i, rt in enumerate(temp)]
             
@@ -680,7 +702,7 @@ class hive:
                 temperature = 2700
             elif (temperature > 6533):
                 temperature = 6533
-            
+
             self._sendDeviceValue(light_id, \
                                   TEMPERATURE_PAYLOAD.format(temperature))
             self.updateLightValue(light_id, "colourTemp", temperature)
@@ -725,8 +747,5 @@ class hive:
             print("Unexpected exception in hive.loadJSON():" + \
                   "{} - {}".format(sys.exc_info()[0], sys.exc_info()[1]))
 
-        else:
-            return self.data['schedule']
-                
     def hive_main(self):
         schedule = self.loadJSON()

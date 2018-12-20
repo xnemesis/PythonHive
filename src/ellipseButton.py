@@ -85,11 +85,9 @@ class ellipseButton(QtWidgets.QGraphicsEllipseItem):
         color = QtGui.QColor(QtCore.Qt.lightGray)
         
         if self._light is None:
-            print("toggling all")
             self._hiveLight.toggleAllLights(0)
             color = QtGui.QColor(QtCore.Qt.lightGray)
         elif self._light == "-1":
-            print("calling update")
             self._parent.refreshButtons()
         else:
             ret = self._hiveLight.toggleDevice(self._light)

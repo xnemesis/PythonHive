@@ -24,10 +24,8 @@ class imageLabel(QtWidgets.QLabel):
                 if (self._direction):
                     ret = self._hiveLight.increaseColourTemperature(self._light,
                                                                     100)
-                    print(ret)
                 else:
                     ret = self._hiveLight.decreaseColourTemperature(self._light,
                                                                     100)
-                    print(ret)
-        
+
         super(QtWidgets.QLabel, self).mouseReleaseEvent(event)
